@@ -1,122 +1,102 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import { useState } from "react";
+import { CameraFeed } from "@/components/CameraFeed";
+import { POSE_LIBRARY, scorePose } from "@/lib/poseLibrary";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
 
-function App() {
-  const [count, setCount] = useState(0)
+export default function App() {
+  const [poseId, setPoseId] = useState(POSE_LIBRARY[0].id);
+  const [angles, setAngles] = useState<Record<string, number>>({});
+
+  const activePose = POSE_LIBRARY.find((p) => p.id === poseId)!;
+  const result = scorePose(angles, activePose);
+  function handlePoseChange(value: string | null) {
+    if (value) setPoseId(value);
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
+    <div className="min-h-screen bg-neutral-950 text-neutral-100 p-6">
+      <div className="mx-auto max-w-5xl space-y-6">
+        <header className="space-y-1">
+          <h1 className="text-2xl font-semibold">
+            Yoga Pose Competence Checker
+          </h1>
+          <p className="text-neutral-400 text-sm">
+            Pick a pose, strike it in front of your camera, get live alignment
+            feedback.
           </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+        </header>
 
-      <div className="ticks"></div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="md:col-span-2 space-y-4">
+            <CameraFeed onAngles={setAngles} />
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+            <Select value={poseId} onValueChange={handlePoseChange}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Choose a pose" />
+              </SelectTrigger>
+              <SelectContent>
+                {POSE_LIBRARY.map((pose) => (
+                  <SelectItem key={pose.id} value={pose.id}>
+                    {pose.name} ({pose.sanskritName})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+          <div className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Competence Score</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-bold">{result.score}</span>
+                  <span className="text-neutral-400 text-sm">/ 100</span>
+                </div>
+                <Progress value={result.score} />
+                <div className="space-y-1 pt-2">
+                  {result.feedback.map((tip, i) => (
+                    <p key={i} className="text-sm text-neutral-300">
+                      {tip}
+                    </p>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">{activePose.name}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 text-sm">
+                <p className="text-neutral-300">{activePose.description}</p>
+                <div className="flex flex-wrap gap-1">
+                  {activePose.benefits.map((b) => (
+                    <Badge key={b} variant="secondary">
+                      {b}
+                    </Badge>
+                  ))}
+                </div>
+                <div className="space-y-1 text-neutral-400">
+                  {activePose.cautions.map((c) => (
+                    <p key={c}>⚠ {c}</p>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
-
-export default App
